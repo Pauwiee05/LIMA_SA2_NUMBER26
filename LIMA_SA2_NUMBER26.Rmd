@@ -1,0 +1,113 @@
+---
+title: "LIMA_SA2_NUMBER26"
+output: html_document
+date: "2023-12-17"
+---
+## Dataset Description
+
+The effect of two-dimensional visual stimuli on rats' spontaneous exploring activity caught the curiosity of a cognitive psychologist.   Thirty-six (n = 36) rats were chosen for the experiment and divided into three groups at random for treatment:
+
+**Visual images of shapes**
+**Visual images of patterns**
+**Visual images that used pictures**
+
+Rats were released into a chamber and the number of seconds the rats spent exploring the experimental chamber with the images were recorded.
+
+### Checking of Assumptions
+
+**Assumption #1:**
+
+The dependent variable, time or time_exploration, is measured at the continuous level.
+
+**Assumption #2:**
+The independent variable, stimuli or visual_stimuli consists of three categorical groups: shape, pattern, picture.
+
+**Assumption #3:**
+Since there is no relationship between the observations in each group of the independent variable or between the groups themselves, each observation is independent of the others.
+
+**Assumption #4:**
+There are no significant outliers found in the visual stimuli groups of the labrats in terms of time_exploration, as assessed by visual inspection of boxplots
+
+```{r boxplot, echo=FALSE}
+library(tidyverse)
+library(rstatix)
+library(car)
+library(ggplot2)
+library(lme4)
+library(dplyr)
+
+data_labrats <- data.frame(
+  visual_stimuli = c("Shape", "Shape", "Shape", "Shape", "Shape", "Shape", "Shape", "Shape",
+                  "Pattern", "Pattern", "Pattern", "Pattern", "Pattern", "Pattern", "Pattern", "Pattern",
+                  "Picture", "Picture", "Picture", "Picture", "Picture", "Picture", "Picture", "Picture",
+                  "Shape", "Shape", "Shape", "Shape", "Pattern", "Pattern", "Pattern", "Pattern",
+                  "Picture", "Picture", "Picture", "Picture"),
+  time_exploration = c(2,0.75,1.25,1,1.5,1.25,1.75,0.5,2.5,3.25,1.85,3.05,2.5,3,4.1,3.75,4.25,4.1,4.25,4.4,3.75,3.05,3.2,5,2,0.75,1.25,1,2.5,3.25,1.85,3.05,4.25,4.4,3.75,3.05)
+)
+
+# Box plot
+boxplot(time_exploration ~ visual_stimuli, data = data_labrats, col = "cyan", border = "black",
+        main = "Boxplot of Time Exploration by Visual Stimuli",
+        xlab = "Visual Stimuli", ylab = "Time Exploration",
+        outline = TRUE) 
+
+```
+
+**Assumption #5:**
+The time_exploration is approximately normally distributed for each of the physical activity groups, as assessed by Shapiro-Wilk's test, p > 0.05.
+
+```{r shapiro, echo=FALSE}
+
+# Shapiro-Wilk test for normality 
+shapiro_test <- data_labrats %>%
+  group_by(visual_stimuli) %>%
+  summarise(p_value = shapiro.test(time_exploration)$p.value)
+
+# Print result
+print("SHAPIRO-WILK's Test:")
+print(shapiro_test)
+
+```
+
+
+**Assumption #6:**
+There was homogeneity of variances of the dependent variable for all physical activity groups, as assessed by Levene's test of homogeneity of variances, p = 0.653
+
+```{r levene, echo=FALSE}
+
+# Levene's test for homogeneity of variances
+levene_test <- car::leveneTest(time_exploration ~ visual_stimuli, data = data_labrats)
+print("LEVENE's Test:")
+print(levene_test)
+
+```
+
+### COMPUTATION
+```{r computation, echo=FALSE}
+
+# ANOVA - time_exploration
+ANOVA <- aov(time_exploration ~ visual_stimuli, data = data_labrats)
+summary(ANOVA)
+
+# Descriptive statistics
+descriptiveStats <- data_labrats %>%
+  group_by(visual_stimuli) %>%
+  summarise(
+    mean_time = mean(time_exploration),
+    sd_time = sd(time_exploration),
+    n = n()
+  )
+print("Descriptive Statistics:")
+print(descriptiveStats)
+
+# POST-HOC TEST
+posthoc <- data_labrats %>%
+  tukey_hsd(time_exploration ~ visual_stimuli)
+
+print("POST-HOC Test:")
+print(posthoc)
+```
+
+**Report:**
+
+The statistical significance of the changes in mileage of five cars using four different oils was assessed using a one-way ANOVA. According to the boxplot there were no outlier. In the shapiro-wilk test the p values for each visual_stimuli category/group are all above 0.05 and levene's test show that the p-value is 0.653 > 0.05, therefore there is no evidence to reject the null hypothesis for any group.The one-way ANOVA test indicates a significant difference in the mean time exploration accross different visual stimuli conditions. Post-hoc revealed that there is significant differences in mean time exploration between Pattern and Picture, Pattern and Shape, and Picture and shape. Hence we can statistically conclude that there is a significant impact of 2 - dimensional visual stimuli on the spontaneous exploration behavior in rats.
